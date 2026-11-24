@@ -1,0 +1,2 @@
+import {NextRequest,NextResponse} from "next/server"; import {adminCookieName,validToken} from "@/lib/admin-auth"; import {testHistorian} from "@/lib/historian";
+export async function POST(req:NextRequest){if(!validToken(req.cookies.get(adminCookieName())?.value))return NextResponse.json({error:"Unauthorized"},{status:401});try{return NextResponse.json(await testHistorian())}catch(e){return NextResponse.json({connected:false,latencyMs:0,message:e instanceof Error?e.message:"Connection failed"},{status:503})}}

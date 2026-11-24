@@ -1,0 +1,2 @@
+import {ReactNode} from "react"; import type {Quality} from "@/lib/types"; import {qualityClass} from "@/lib/presentation";
+export function Kpi({title,value,unit,quality,children}:{title:string,value:string,unit:string,quality:Quality,children:ReactNode}){return <article className="panel kpi"><header><b>{title}</b><span className={qualityClass(quality)}>{quality}</span></header><div className="value">{value} <small>{unit}</small></div>{children}</article>}

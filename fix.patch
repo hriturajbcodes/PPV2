@@ -1,0 +1,123 @@
+diff --git a/app/globals.css b/app/globals.css
+index 5e959b6..951c124 100644
+--- a/app/globals.css
++++ b/app/globals.css
+@@ -119,3 +119,15 @@ html[data-theme="light"] .toolbar button.on{background:#17212a;color:#fff}
+ .recharts-wrapper,.recharts-surface{will-change:contents}
+ 
+ .jspl-logo-image{width:100%;height:100%;object-fit:contain;padding:4px 8px}
++
++/* Phase 18 — super interactive trend navigation */
++.interactive-chart,.popout-chart{outline:none;touch-action:pan-y}
++.interactive-chart:focus-visible,.popout-chart:focus-visible{box-shadow:inset 0 0 0 1px #2d8cff}
++.chart-tools{flex-wrap:nowrap}
++.chart-tools button{white-space:nowrap;transition:border-color .14s ease,background .14s ease,transform .1s ease}
++.chart-tools button:hover:not(:disabled){border-color:#536b80;background:#111a21;color:#dceaf6}
++.chart-tools button:active:not(:disabled){transform:scale(.96)}
++.chart-tools button svg{width:11px;height:11px}
++.chart-tools button:disabled{opacity:.28;cursor:not-allowed}
++.interactive-chart::after{content:"Wheel: zoom  ·  ← →: pan  ·  + −: stretch  ·  Esc: reset";position:absolute;right:8px;bottom:5px;color:#4f6a84;font-size:7px;pointer-events:none;opacity:0;transition:opacity .15s ease}
++.interactive-chart:hover::after,.interactive-chart:focus-within::after{opacity:1}
+diff --git a/components/trend.tsx b/components/trend.tsx
+index bc72fd6..9f4303b 100644
+--- a/components/trend.tsx
++++ b/components/trend.tsx
+@@ -1,7 +1,7 @@
+ "use client";
+ 
+ import {memo,useCallback,useEffect,useMemo,useState} from "react";
+-import {Crosshair,Maximize2,Minimize2,PictureInPicture2,RotateCcw,ZoomIn,X} from "lucide-react";
++import {Crosshair,Maximize2,Minimize2,ChevronLeft,ChevronRight,Minus,PictureInPicture2,Plus,RotateCcw,ZoomIn,X} from "lucide-react";
+ import {
+  CartesianGrid,Line,LineChart,ReferenceArea,ReferenceLine,ResponsiveContainer,
+  Tooltip,XAxis,YAxis
+@@ -88,6 +88,7 @@ export function Trend(){
+  const[dragStart,setDragStart]=useState<number|null>(null),[dragEnd,setDragEnd]=useState<number|null>(null);
+  const[pinned,setPinned]=useState<ChartPoint|null>(null);
+  const[popout,setPopout]=useState(false),[expanded,setExpanded]=useState(false);
++ const[windowSize,setWindowSize]=useState<number|null>(null);
+ 
+  const load=useCallback(async()=>{
+   setLoading(true);setError("");
+@@ -120,20 +121,45 @@ export function Trend(){
+  },[popout]);
+ 
+  const full=useMemo<ChartPoint[]>(()=>points.map((p,index)=>({...p,index,label:istLabel(p.timestamp,range)})),[points,range]);
+- const chart=useMemo(()=>zoom?full.slice(zoom.left,zoom.right+1):full,[full,zoom]);
++ const chart=useMemo(()=>{
++  if(zoom)return full.slice(zoom.left,zoom.right+1);
++  if(windowSize&&full.length>windowSize)return full.slice(full.length-windowSize);
++  return full;
++ },[full,zoom,windowSize]);
+  const moisture=metric==="moisture";
+  const valid=chart.filter(x=>x.value!==null).map(x=>x.value as number);
+  const prodDomain:[number,number]=valid.length
+    ? [Math.max(0,Math.floor(Math.min(...valid)*.97)),Math.max(1,Math.ceil(Math.max(...valid)*1.03))]
+    : [0,16000];
+ 
++ const setVisibleWindow=(size:number)=>{
++  const next=Math.max(3,Math.min(full.length||3,size));
++  setZoom(null);setWindowSize(next);
++ };
++ const zoomIn=()=>setVisibleWindow(Math.max(3,Math.floor(chart.length*.7)));
++ const zoomOut=()=>setVisibleWindow(Math.min(full.length,Math.ceil(chart.length*1.4)));
++ const pan=(direction:-1|1)=>{
++  if(!full.length)return;
++  const current=zoom??{left:Math.max(0,full.length-chart.length),right:full.length-1};
++  const width=current.right-current.left+1;
++  const step=Math.max(1,Math.floor(width*.2))*direction;
++  let left=current.left+step,right=current.right+step;
++  if(left<0){right-=left;left=0}
++  if(right>=full.length){left-=right-full.length+1;right=full.length-1}
++  setWindowSize(null);setZoom({left:Math.max(0,left),right:Math.min(full.length-1,right)});
++ };
++ const wheelZoom=(e:React.WheelEvent<HTMLDivElement>)=>{
++  if(full.length<4)return;
++  e.preventDefault();
++  if(e.deltaY<0)zoomIn();else zoomOut();
++ };
+  const finishZoom=()=>{
+   if(dragStart===null||dragEnd===null){setDragStart(null);setDragEnd(null);return}
+   const a=Math.min(dragStart,dragEnd),b=Math.max(dragStart,dragEnd);
+   if(b-a>=2){const offset=zoom?.left??0;setZoom({left:offset+a,right:offset+b})}
+   setDragStart(null);setDragEnd(null);
+  };
+- const reset=()=>{setZoom(null);setPinned(null);setDragStart(null);setDragEnd(null)};
++ const reset=()=>{setZoom(null);setWindowSize(null);setPinned(null);setDragStart(null);setDragEnd(null)};
+ 
+  const graph=<>
+    {chart.length>0&&<FastTrendGraph
+@@ -164,7 +190,11 @@ export function Trend(){
+   <div className="chart-tools">
+    <span><ZoomIn/> Drag to zoom</span><span><Crosshair/> Click to pin</span>
+    <span className="trend-count">{valid.length} points</span>
+-   <button onClick={reset} disabled={!zoom&&!pinned}><RotateCcw/> Reset</button>
++   <button onClick={()=>pan(-1)} disabled={full.length<=chart.length} title="Pan left"><ChevronLeft/></button>
++   <button onClick={zoomIn} disabled={chart.length<=3} title="Zoom in / stretch"><Plus/> Stretch</button>
++   <button onClick={zoomOut} disabled={chart.length>=full.length} title="Zoom out / compress"><Minus/> Compress</button>
++   <button onClick={()=>pan(1)} disabled={full.length<=chart.length} title="Pan right"><ChevronRight/></button>
++   <button onClick={reset} disabled={!zoom&&!windowSize&&!pinned}><RotateCcw/> Reset</button>
+    {!popout&&<button onClick={()=>setPopout(true)} title="Pop out chart"><PictureInPicture2/> Pop out</button>}
+   </div>
+  </>;
+@@ -172,7 +202,10 @@ export function Trend(){
+  return <>
+   <section className="panel trend">
+    {toolbar}
+-   <div className="chart interactive-chart">{graph}</div>
++   <div className="chart interactive-chart" tabIndex={0} onWheel={wheelZoom}
++ onKeyDown={e=>{if(e.key==="+"){zoomIn()}else if(e.key==="-"){zoomOut()}else if(e.key==="ArrowLeft"){pan(-1)}else if(e.key==="ArrowRight"){pan(1)}else if(e.key==="Escape"){reset()}}}>
++ {graph}
++</div>
+    <div className="trend-bottom"><footer>All timestamps rendered in IST (Asia/Kolkata). Historian gaps are not interpolated.</footer>{pinned&&<div className="pinned-point"><b>PINNED</b><span>{istLabel(pinned.timestamp,range)}</span><strong>{pinned.value==null?"No data":`${pinned.value.toFixed(moisture?2:0)} ${moisture?"%":"MT"}`}</strong></div>}</div>
+   </section>
+ 
+@@ -180,7 +213,7 @@ export function Trend(){
+    <section className={`chart-popout panel ${expanded?"expanded":""}`}>
+     <header><div><small>PELLET PLANT · TREND VIEW</small><h2>{moisture?"Moisture":"Production"} Trend</h2></div><div><button onClick={()=>setExpanded(v=>!v)} title={expanded?"Restore":"Maximize"}>{expanded?<Minimize2/>:<Maximize2/>}</button><button onClick={()=>{setPopout(false);setExpanded(false)}} title="Close"><X/></button></div></header>
+     {toolbar}
+-    <div className="popout-chart">{graph}</div>
++    <div className="popout-chart" tabIndex={0} onWheel={wheelZoom}>{graph}</div>
+     <footer>IST (Asia/Kolkata) · {valid.length} historian points · Esc closes this view</footer>
+    </section>
+   </div>}

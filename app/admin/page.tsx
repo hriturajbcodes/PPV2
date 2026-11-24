@@ -1,0 +1,15 @@
+"use client";
+import Link from "next/link"; import {useEffect,useState} from "react"; import {Database,LockKeyhole,LogOut,Save,ShieldCheck} from "lucide-react";
+type Cfg={thresholds:Record<string,number>;tags:unknown};
+export default function Admin(){
+ const [password,setPassword]=useState(""),[cfg,setCfg]=useState<Cfg|null>(null),[error,setError]=useState(""),[db,setDb]=useState("");
+ const load=async()=>{const r=await fetch("/api/admin/config",{cache:"no-store"});if(r.ok)setCfg(await r.json())};
+ useEffect(()=>{load()},[]);
+ const login=async()=>{setError("");const r=await fetch("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password})});if(!r.ok){setError("Invalid password");return}setPassword("");load()};
+ const save=async()=>{if(!cfg)return;const r=await fetch("/api/admin/config",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({thresholds:cfg.thresholds})});const b=await r.json();if(!r.ok)setError(b.error);else{setCfg(b);setError("Configuration updated for this application runtime.")}};
+ const test=async()=>{setDb("Testing…");const r=await fetch("/api/admin/test-db",{method:"POST"});const b=await r.json();setDb(`${b.connected?"Connected":"Failed"} · ${b.latencyMs??0}ms · ${b.message}`)};
+ if(!cfg)return <main className="admin-page"><section className="admin-login panel"><LockKeyhole/><h1>Administrator Access</h1><p>Application configuration only. Historian access remains SELECT-only.</p><input type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()} placeholder="Admin password"/><button onClick={login}>Unlock</button>{error&&<small>{error}</small>}<Link href="/">Return to dashboard</Link></section></main>;
+ return <main className="admin-page"><header className="admin-head"><div><small>PELLET PLANT · PLANT 2</small><h1>System Configuration</h1></div><div><Link href="/">Dashboard</Link><button onClick={async()=>{await fetch("/api/admin/logout",{method:"POST"});setCfg(null)}}><LogOut/>Lock</button></div></header>
+ <section className="admin-grid"><article className="panel admin-card"><h2><ShieldCheck/>Operating thresholds</h2><p>Runtime-only settings. These do not write to HistorianDb.</p><div className="form-grid">{Object.entries(cfg.thresholds).map(([k,v])=><label key={k}><span>{k}</span><input type="number" value={v} onChange={e=>setCfg({...cfg,thresholds:{...cfg.thresholds,[k]:Number(e.target.value)}})}/></label>)}</div><button className="primary" onClick={save}><Save/>Save runtime configuration</button>{error&&<div className="admin-message">{error}</div>}</article>
+ <article className="panel admin-card"><h2><Database/>Historian connection</h2><p>Read-only connectivity test against the configured SQL Server.</p><dl><dt>Database</dt><dd>HistorianDb</dd><dt>View</dt><dd>dbo.L1_VW_PP_TagData</dd><dt>Access</dt><dd>SELECT only</dd></dl><button onClick={test}>Test connection</button>{db&&<div className="admin-message">{db}</div>}<h3>Configured tag registry</h3><pre>{JSON.stringify(cfg.tags,null,2)}</pre></article></section></main>
+}
