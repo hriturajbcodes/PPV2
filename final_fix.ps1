@@ -1,220 +1,339 @@
 $ErrorActionPreference = "Stop"
 
-$header = "components\header.tsx"
-$css = "app\globals.css"
+Write-Host ""
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host " PPV2 - Trend Configuration Final Fix" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host ""
 
-Write-Host "Applying header/UI cleanup..." -ForegroundColor Cyan
+$trendComponent = "components\trend.tsx"
+$trendLibrary   = "lib\trends.ts"
 
 # ============================================================
-# HEADER
+# VALIDATE PROJECT FILES
 # ============================================================
 
-$content = Get-Content $header -Raw
-
-# Remove unused icons
-$content = $content.Replace(
-'import {Bell,Expand,LockKeyhole,Pause,Play,Printer,Sun,Moon,Volume2,VolumeX} from "lucide-react";',
-'import {Bell,Expand,LockKeyhole,Printer,Sun,Moon} from "lucide-react";'
-)
-
-# Remove Live / Pause button
-$content = [regex]::Replace(
-    $content,
-    '\s*<button onClick=\{\(\)=>onPause\(!paused\)\}.*?</button>',
-    '',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-
-# Remove Sound button
-$content = [regex]::Replace(
-    $content,
-    '\s*<button onClick=\{onSound\}.*?</button>',
-    '',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-
-# Remove old Insights link
-$content = $content.Replace(
-    '<Link href="/insights">Insights</Link>',
-    ''
-)
-
-# Add new Insights button after Admin
-$adminOld = '<Link className="admin-lock" href="/admin" title="Admin"><LockKeyhole/></Link><em/>'
-
-$adminNew = @'
-<Link className="admin-lock" href="/admin" title="Admin"><LockKeyhole/></Link>
-     <Link className="insights-button" href="/insights">
-       Insights <span aria-hidden="true">↗</span>
-     </Link>
-     <em/>
-'@
-
-if ($content.Contains($adminOld)) {
-    $content = $content.Replace($adminOld, $adminNew.Trim())
-}
-elseif (-not $content.Contains('className="insights-button"')) {
-    Write-Host "Could not locate Admin/Insights insertion point." -ForegroundColor Yellow
+if (-not (Test-Path $trendComponent)) {
+    Write-Host "ERROR: $trendComponent not found." -ForegroundColor Red
+    exit 1
 }
 
-Set-Content $header $content -Encoding UTF8
+if (-not (Test-Path $trendLibrary)) {
+    Write-Host "ERROR: $trendLibrary not found." -ForegroundColor Red
+    exit 1
+}
 
 
 # ============================================================
-# CSS
+# BACKUP
 # ============================================================
 
-$styles = @'
+$backupDir = ".ppv2-backup"
 
-/* ==========================================================
-   HEADER CLEANUP
-   ========================================================== */
-
-/* Remove KPI black separator */
-.kpi footer {
-    border-top: none !important;
+if (-not (Test-Path $backupDir)) {
+    New-Item -ItemType Directory -Path $backupDir | Out-Null
 }
 
-/* Insights navigation */
-.actions .insights-button {
-    height: 34px;
+Copy-Item $trendComponent "$backupDir\trend.tsx" -Force
+Copy-Item $trendLibrary "$backupDir\trends.ts" -Force
 
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    gap: 6px;
-
-    padding: 0 13px;
-
-    border: 1px solid #2b3741;
-    border-radius: 6px;
-
-    background: #0d1115;
-
-    color: #9db5ca;
-
-    text-decoration: none;
-
-    font-family: var(--font-inter), Inter, Arial, sans-serif;
-
-    font-size: 10px;
-    font-weight: 650;
-
-    white-space: nowrap;
-
-    transition:
-        background 160ms ease,
-        border-color 160ms ease,
-        color 160ms ease,
-        transform 120ms ease;
-}
-
-.actions .insights-button span {
-    font-size: 13px;
-    line-height: 1;
-
-    transition:
-        transform 160ms ease;
-}
-
-.actions .insights-button:hover {
-    background: #151c22;
-
-    border-color: #536b7d;
-
-    color: #ffffff;
-
-    transform: translateY(-1px);
-}
-
-.actions .insights-button:hover span {
-    transform: translate(2px, -2px);
-}
-
-.actions .insights-button:active {
-    transform: scale(.97);
-}
+Write-Host "Backup created in $backupDir" -ForegroundColor DarkGray
 
 
-/* ==========================================================
-   LIGHT THEME HEADER
-   ========================================================== */
-
-html[data-theme="light"] .innovation strong {
-    color: #17212a !important;
-}
-
-html[data-theme="light"] .innovation span {
-    color: #66829d !important;
-}
-
-html[data-theme="light"] .innovation b {
-    color: #147bd1 !important;
-}
-
-
-/* Insights becomes primary navigation action */
-
-html[data-theme="light"] .actions .insights-button {
-    background: #15202a !important;
-
-    border-color: #15202a !important;
-
-    color: #ffffff !important;
-}
-
-html[data-theme="light"] .actions .insights-button:hover {
-    background: #263746 !important;
-
-    border-color: #263746 !important;
-}
-
-
-/* ==========================================================
-   HEADER SPACING AFTER REMOVING LIVE + SOUND
-   ========================================================== */
-
-.actions {
-    gap: 7px !important;
-}
-
-.actions em {
-    margin-left: 4px;
-    margin-right: 4px;
-}
-
-
-/* ==========================================================
-   KPI CLEANUP
-   ========================================================== */
-
-.kpi footer {
-    border-top: 0 !important;
-    box-shadow: none !important;
-}
-
-/* Remove any pseudo-element separator */
-
-.kpi footer::before,
-.kpi footer::after {
-    display: none !important;
-    content: none !important;
-}
-
-'@
-
-Add-Content $css $styles
+# ============================================================
+# TREND COMPONENT
+# ============================================================
 
 Write-Host ""
-Write-Host "Changes applied successfully." -ForegroundColor Green
+Write-Host "Updating trend component..." -ForegroundColor Yellow
+
+$trend = Get-Content $trendComponent -Raw -Encoding UTF8
+
+
+# ------------------------------------------------------------
+# 1. DEFAULT RANGE = DAILY
+# ------------------------------------------------------------
+
+$oldDefault = 'const[range,setRange]=useState<TrendRange>("live");'
+$newDefault = 'const[range,setRange]=useState<TrendRange>("daily");'
+
+if ($trend.Contains($oldDefault)) {
+
+    $trend = $trend.Replace(
+        $oldDefault,
+        $newDefault
+    )
+
+    Write-Host "  [OK] Default chart changed: Live -> Daily" -ForegroundColor Green
+}
+elseif ($trend.Contains($newDefault)) {
+
+    Write-Host "  [SKIP] Daily is already the default." -ForegroundColor DarkGray
+}
+else {
+
+    Write-Host "  [WARN] Could not locate range state declaration." -ForegroundColor Yellow
+}
+
+
+# ------------------------------------------------------------
+# 2. RENAME LIVE (40s) -> LIVE
+# ------------------------------------------------------------
+
+if ($trend.Contains(">Live (40s)</button>")) {
+
+    $trend = $trend.Replace(
+        ">Live (40s)</button>",
+        ">Live</button>"
+    )
+
+    Write-Host "  [OK] Live (40s) renamed to Live" -ForegroundColor Green
+}
+elseif ($trend.Contains(">Live</button>")) {
+
+    Write-Host "  [SKIP] Live button already renamed." -ForegroundColor DarkGray
+}
+else {
+
+    Write-Host "  [WARN] Could not locate Live button label." -ForegroundColor Yellow
+}
+
+
+# Save component
+
+Set-Content `
+    -Path $trendComponent `
+    -Value $trend `
+    -Encoding UTF8 `
+    -NoNewline
+
+
+# ============================================================
+# TREND BACKEND
+# ============================================================
+
 Write-Host ""
-Write-Host "Removed:" -ForegroundColor Cyan
-Write-Host "  - Live/Pause button"
-Write-Host "  - Sound button"
-Write-Host "  - KPI horizontal separator"
+Write-Host "Updating historian trend window..." -ForegroundColor Yellow
+
+$library = Get-Content $trendLibrary -Raw -Encoding UTF8
+
+
+# ------------------------------------------------------------
+# 3. LIVE WINDOW 40 SEC -> 120 SEC
+# ------------------------------------------------------------
+
+$patterns40 = @(
+    "40_000",
+    "40000"
+)
+
+$changedWindow = $false
+
+foreach ($pattern in $patterns40) {
+
+    if ($library.Contains($pattern)) {
+
+        if ($pattern -eq "40_000") {
+
+            $library = $library.Replace(
+                "40_000",
+                "120_000"
+            )
+        }
+        else {
+
+            $library = $library.Replace(
+                "40000",
+                "120000"
+            )
+        }
+
+        $changedWindow = $true
+    }
+}
+
+if ($changedWindow) {
+
+    Write-Host "  [OK] Live historian window changed to 120 seconds" -ForegroundColor Green
+}
+elseif (
+    $library.Contains("120_000") -or
+    $library.Contains("120000")
+) {
+
+    Write-Host "  [SKIP] Live window already uses 120 seconds." -ForegroundColor DarkGray
+}
+else {
+
+    Write-Host "  [WARN] Could not identify the existing Live time window." -ForegroundColor Yellow
+}
+
+
+# ------------------------------------------------------------
+# 4. LIVE GAP THRESHOLD
+#
+# Existing:
+# range==="live" ? 6000 : 120000
+#
+# New:
+# range==="live" ? 15000 : 120000
+# ------------------------------------------------------------
+
+$oldGap1 = 'range==="live" ? 6000 : 120000'
+$newGap1 = 'range==="live" ? 15000 : 120000'
+
+$oldGap2 = 'range === "live" ? 6000 : 120000'
+$newGap2 = 'range === "live" ? 15000 : 120000'
+
+if ($library.Contains($oldGap1)) {
+
+    $library = $library.Replace(
+        $oldGap1,
+        $newGap1
+    )
+
+    Write-Host "  [OK] Live gap threshold changed to 15 seconds" -ForegroundColor Green
+}
+elseif ($library.Contains($oldGap2)) {
+
+    $library = $library.Replace(
+        $oldGap2,
+        $newGap2
+    )
+
+    Write-Host "  [OK] Live gap threshold changed to 15 seconds" -ForegroundColor Green
+}
+elseif (
+    $library.Contains($newGap1) -or
+    $library.Contains($newGap2)
+) {
+
+    Write-Host "  [SKIP] Live gap threshold already configured." -ForegroundColor DarkGray
+}
+else {
+
+    Write-Host "  [WARN] Gap threshold expression not found." -ForegroundColor Yellow
+}
+
+
+# Save trend backend
+
+Set-Content `
+    -Path $trendLibrary `
+    -Value $library `
+    -Encoding UTF8 `
+    -NoNewline
+
+
+# ============================================================
+# VERIFY
+# ============================================================
+
 Write-Host ""
-Write-Host "Updated:" -ForegroundColor Cyan
-Write-Host "  - Insights navigation"
-Write-Host "  - Innovation text in light mode"
-Write-Host "  - Header spacing"
+Write-Host "Verifying modifications..." -ForegroundColor Cyan
+
+$trendCheck = Get-Content $trendComponent -Raw -Encoding UTF8
+$libCheck   = Get-Content $trendLibrary -Raw -Encoding UTF8
+
+$failed = $false
+
+
+# Daily default
+
+if ($trendCheck.Contains('useState<TrendRange>("daily")')) {
+
+    Write-Host "  [PASS] Daily default" -ForegroundColor Green
+}
+else {
+
+    Write-Host "  [FAIL] Daily default" -ForegroundColor Red
+    $failed = $true
+}
+
+
+# Live label
+
+if (
+    $trendCheck.Contains(">Live</button>") -and
+    -not $trendCheck.Contains("Live (40s)")
+) {
+
+    Write-Host "  [PASS] Live label" -ForegroundColor Green
+}
+else {
+
+    Write-Host "  [FAIL] Live label" -ForegroundColor Red
+    $failed = $true
+}
+
+
+# Live range
+
+if (
+    $libCheck.Contains("120_000") -or
+    $libCheck.Contains("120000")
+) {
+
+    Write-Host "  [PASS] 120 second Live range" -ForegroundColor Green
+}
+else {
+
+    Write-Host "  [WARN] Could not verify 120 second range" -ForegroundColor Yellow
+}
+
+
+# ============================================================
+# CLEAR NEXT CACHE
+# ============================================================
+
+Write-Host ""
+Write-Host "Clearing Next.js cache..." -ForegroundColor Yellow
+
+if (Test-Path ".next") {
+
+    Remove-Item `
+        ".next" `
+        -Recurse `
+        -Force
+
+    Write-Host "  [OK] .next removed" -ForegroundColor Green
+}
+else {
+
+    Write-Host "  [SKIP] .next does not exist" -ForegroundColor DarkGray
+}
+
+
+# ============================================================
+# RESULT
+# ============================================================
+
+Write-Host ""
+
+if ($failed) {
+
+    Write-Host "==========================================" -ForegroundColor Red
+    Write-Host " Some required changes could not be verified" -ForegroundColor Red
+    Write-Host "==========================================" -ForegroundColor Red
+
+    Write-Host ""
+    Write-Host "Backups are available in:" -ForegroundColor Yellow
+    Write-Host $backupDir
+
+    exit 1
+}
+
+Write-Host "==========================================" -ForegroundColor Green
+Write-Host " PPV2 trend configuration updated" -ForegroundColor Green
+Write-Host "==========================================" -ForegroundColor Green
+
+Write-Host ""
+Write-Host "Default chart : Daily"
+Write-Host "Live label    : Live"
+Write-Host "Live window   : 120 seconds"
+Write-Host "Gap threshold : 15 seconds"
+Write-Host ""
+Write-Host "Start the dashboard with:" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "npm.cmd run dev" -ForegroundColor White
+Write-Host ""

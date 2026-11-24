@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 import sql from "mssql";
 import { env } from "@/lib/env";
 import { TAGS } from "@/config/tags";
@@ -33,7 +33,7 @@ function metricTag(metric: TrendMetric) {
 
 export function defaultWindow(range: TrendRange) {
   const to = new Date();
-  if (range === "live") return { from:new Date(to.getTime()-40_000), to };
+  if (range === "live") return { from:new Date(to.getTime()-120_000), to };
   // Daily means current calendar day in IST. Convert IST midnight to UTC.
   const ist = new Date(to.getTime()+330*60_000);
   const from = new Date(Date.UTC(ist.getUTCFullYear(),ist.getUTCMonth(),ist.getUTCDate())-330*60_000);
@@ -75,7 +75,7 @@ export async function getTrend(metric:TrendMetric, range:TrendRange, from:Date, 
 
   // Preserve real historian gaps: insert null separators when interval jumps materially.
   const withGaps:TrendPoint[]=[];
-  const expected = range==="live" ? 6000 : 120000;
+  const expected = range==="live" ? 15000 : 120000;
   for(let i=0;i<raw.length;i++){
     if(i>0){
       const gap=new Date(raw[i].timestamp).getTime()-new Date(raw[i-1].timestamp).getTime();

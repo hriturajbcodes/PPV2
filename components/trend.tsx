@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {memo,useCallback,useEffect,useMemo,useState} from "react";
 import {Crosshair,Maximize2,Minimize2,ChevronLeft,ChevronRight,Minus,PictureInPicture2,Plus,RotateCcw,ZoomIn,X} from "lucide-react";
@@ -78,7 +78,7 @@ const FastTrendGraph=memo(function FastTrendGraph({
 
 export function Trend(){
  const[metric,setMetric]=useState<TrendMetric>("moisture");
- const[range,setRange]=useState<TrendRange>("live");
+ const[range,setRange]=useState<TrendRange>("daily");
  const[points,setPoints]=useState<TrendPoint[]>([]);
  const[loading,setLoading]=useState(true),[error,setError]=useState("");
  const[customOpen,setCustomOpen]=useState(false);
@@ -182,7 +182,7 @@ export function Trend(){
  const toolbar=<>
   <div className="toolbar">
    <div><button className={moisture?"on":""} onClick={()=>setMetric("moisture")}>Moisture Trend</button><button className={!moisture?"on":""} onClick={()=>setMetric("production")}>Production Trend</button></div>
-   <div><button className={range==="live"?"on":""} onClick={()=>{setRange("live");setCustomOpen(false)}}>Live (40s)</button><button className={range==="daily"?"on":""} onClick={()=>{setRange("daily");setCustomOpen(false)}}>Daily</button><button className={range==="custom"?"on":""} onClick={()=>{setRange("custom");setCustomOpen(true)}}>Custom</button></div>
+   <div><button className={range==="live"?"on":""} onClick={()=>{setRange("live");setCustomOpen(false)}}>Live</button><button className={range==="daily"?"on":""} onClick={()=>{setRange("daily");setCustomOpen(false)}}>Daily</button><button className={range==="custom"?"on":""} onClick={()=>{setRange("custom");setCustomOpen(true)}}>Custom</button></div>
   </div>
   {customOpen&&<div className="custom-range"><label>From <input type="datetime-local" value={from} onChange={e=>setFrom(e.target.value)}/></label><label>To <input type="datetime-local" value={to} onChange={e=>setTo(e.target.value)}/></label><button onClick={load}>Apply</button></div>}
   <div className="chart-tools">

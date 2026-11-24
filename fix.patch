@@ -1,102 +1,59 @@
-diff --git a/app/globals.css b/app/globals.css
-index 907ff86..c41d868 100644
---- a/app/globals.css
-+++ b/app/globals.css
-@@ -194,3 +194,65 @@ html[data-theme="light"] .insights-top h1 em,html[data-theme="light"] .forecast-
- html[data-theme="light"] .interactive-chart{background:radial-gradient(circle at 50% 100%,rgba(45,140,255,.055),transparent 45%),#fff}
- 
- @media(prefers-reduced-motion:reduce){.motion-card,.insight-row,.state-live:before,.bin-starving .state-dot,.bin-overfeed .state-dot{animation:none!important}.bin,.vessel .fill,.actions button,.toolbar button,.chart-tools button,.bins button,.track i{transition:none!important}}
-+
-+
-+/* Header cleanup + KPI separator removal */
-+.kpi footer{
-+  border-top:0!important;
-+}
-+
-+.actions .insights-button{
-+  height:34px;
-+  display:inline-flex;
-+  align-items:center;
-+  justify-content:center;
-+  gap:6px;
-+  padding:0 12px;
-+  border:1px solid #2a343d;
-+  border-radius:5px;
-+  background:#0b0e11;
-+  color:#9eb5ca;
-+  text-decoration:none;
-+  font-family:var(--font-inter),Inter,Arial,sans-serif;
-+  font-size:10px;
-+  font-weight:650;
-+  letter-spacing:.01em;
-+  white-space:nowrap;
-+  transition:background .16s ease,border-color .16s ease,color .16s ease,transform .12s ease;
-+}
-+.actions .insights-button span{
-+  font-size:12px;
-+  line-height:1;
-+  transition:transform .16s ease;
-+}
-+.actions .insights-button:hover{
-+  background:#131a20;
-+  border-color:#526878;
-+  color:#fff;
-+  transform:translateY(-1px);
-+}
-+.actions .insights-button:hover span{
-+  transform:translate(2px,-2px);
-+}
-+.actions .insights-button:active{
-+  transform:scale(.97);
-+}
-+
-+html[data-theme="light"] .innovation strong{
-+  color:#17212a!important;
-+}
-+html[data-theme="light"] .innovation span{
-+  color:#66829d!important;
-+}
-+html[data-theme="light"] .innovation b{
-+  color:#147bd1!important;
-+}
-+html[data-theme="light"] .actions .insights-button{
-+  background:#15202a!important;
-+  border-color:#15202a!important;
-+  color:#fff!important;
-+}
-+html[data-theme="light"] .actions .insights-button:hover{
-+  background:#263746!important;
-+  border-color:#263746!important;
-+}
 diff --git a/components/header.tsx b/components/header.tsx
-index 8823c55..a8ba739 100644
 --- a/components/header.tsx
 +++ b/components/header.tsx
-@@ -1,7 +1,7 @@
- "use client";
- import Image from "next/image";
- import Link from "next/link";
--import {Bell,Expand,LockKeyhole,Pause,Play,Printer,Sun,Moon,Volume2,VolumeX} from "lucide-react";
-+import {Bell,Expand,LockKeyhole,Printer,Sun,Moon} from "lucide-react";
- import {useEffect,useState} from "react";
- import type { DashboardSnapshot } from "@/lib/types";
- 
-@@ -27,16 +27,14 @@ export function Header({data,paused,onPause,sound,onSound,alarmCount,onAlarms}:{
-  return <header className="topbar">
-    <div><div className="title">Pellet Plant KPI Dashboard</div><div className="sub">PELLET PLANT - PLANT 2 <b className={`state-${state.toLowerCase()}`}>● {state} <i>({latency}ms)</i></b></div></div>
-    <div className="actions">
--     <button onClick={()=>onPause(!paused)} title={paused?"Resume live polling":"Pause live polling"}>{paused?<Play/>:<Pause/>}{paused?"Resume":"Live"}</button>
--     <button onClick={onSound} title={sound?"Mute alarms":"Enable alarm sound"}>{sound?<Volume2/>:<VolumeX/>}</button>
-      <button className={alarmCount?"alarm-button":""} onClick={onAlarms} title="Active alarms"><Bell/>{alarmCount>0&&<span>{alarmCount}</span>}</button>
-      <button onClick={()=>window.print()} title="Print dashboard"><Printer/></button>
-      <button className="round" onClick={toggleTheme} title={light?"Switch to dark theme":"Switch to light theme"}>{light?<Moon/>:<Sun/>}</button>
-      <button onClick={fs} title="Toggle fullscreen"><Expand/></button>
--     <Link className="admin-lock" href="/admin" title="Admin"><LockKeyhole/></Link><em/>
-+     <Link className="admin-lock" href="/admin" title="Admin"><LockKeyhole/></Link>
-+     <Link className="insights-button" href="/insights">Insights <span aria-hidden="true">↗</span></Link><em/>
-      <div className="logo"><Image src="/jspl_logo.png" alt="Jindal Steel" width={120} height={46} priority className="jspl-logo-image"/></div>
-      <div className="innovation"><strong>Innovation for Excellence ©2026</strong><span>Designed and developed by</span><b>Digital Transformation &amp; Automation</b></div>
--     <Link href="/insights">Insights</Link>
-    </div>
-  </header>
- }
+@@ -1,1 +1,1 @@
+-   <div><div className="title">Pellet Plant KPI Dashboard</div><div className="sub">
++   <div><div className="title brand-title"><span>Pellet Plant</span> <em>KPI Dashboard.</em></div><div className="sub">
+diff --git a/app/globals.css b/app/globals.css
+--- a/app/globals.css
++++ b/app/globals.css
+@@ -1,0 +1,45 @@
++/* Pellet Plant executive wordmark */
++.brand-title{
++  display:flex;
++  align-items:baseline;
++  gap:8px;
++  white-space:nowrap;
++  font-family:var(--font-inter),Inter,Arial,sans-serif!important;
++  font-size:clamp(22px,1.7vw,29px)!important;
++  font-weight:500!important;
++  line-height:1!important;
++  letter-spacing:-.045em!important;
++  color:#f5f7f9!important;
++}
++
++.brand-title span{
++  font:inherit;
++}
++
++.brand-title em{
++  font-family:var(--font-editorial),Georgia,serif!important;
++  font-size:1.08em;
++  font-weight:400!important;
++  font-style:italic;
++  line-height:1;
++  letter-spacing:-.035em;
++  color:#8ca8c1!important;
++}
++
++html[data-theme="light"] .brand-title{
++  color:#121a21!important;
++}
++
++html[data-theme="light"] .brand-title em{
++  color:#587691!important;
++}
++
++@media(min-width:1600px){
++  .brand-title{
++    font-size:clamp(25px,1.55vw,31px)!important;
++    gap:9px;
++  }
++}
++
++@media(max-width:1200px){
++  .brand-title{
++    font-size:21px!important;
++    gap:6px;
++  }
++}

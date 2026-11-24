@@ -25,7 +25,7 @@ export function Header({data,paused,onPause,sound,onSound,alarmCount,onAlarms}:{
  };
 
  return <header className="topbar">
-   <div><div className="title">Pellet Plant KPI Dashboard</div><div className="sub">PELLET PLANT - PLANT 2 <b className={`state-${state.toLowerCase()}`}>â— {state} <i>({latency}ms)</i></b></div></div>
+   <div><div className="title brand-title"><span>Pellet Plant</span><em>KPI Dashboard.</em></div><div className="sub">PELLET PLANT - PLANT 2 <b className={`state-${state.toLowerCase()}`}>{state} <i>({latency}ms)</i></b></div></div>
    <div className="actions">
      <button className={alarmCount?"alarm-button":""} onClick={onAlarms} title="Active alarms"><Bell/>{alarmCount>0&&<span>{alarmCount}</span>}</button>
      <button onClick={()=>window.print()} title="Print dashboard"><Printer/></button>
@@ -33,12 +33,16 @@ export function Header({data,paused,onPause,sound,onSound,alarmCount,onAlarms}:{
      <button onClick={fs} title="Toggle fullscreen"><Expand/></button>
      <Link className="admin-lock" href="/admin" title="Admin"><LockKeyhole/></Link>
      <Link className="insights-button" href="/insights">
-       Insights <span aria-hidden="true">â†—</span>
+       Insights <span aria-hidden="true"></span>
      </Link>
      <em/>
      <div className="logo"><Image src="/jspl_logo.png" alt="Jindal Steel" width={120} height={46} priority className="jspl-logo-image"/></div>
-     <div className="innovation"><strong>Innovation for Excellence Â©2026</strong><span>Designed and developed by</span><b>Digital Transformation &amp; Automation</b></div>
+     <div className="innovation"><strong>Innovation for Excellence ©2026</strong><span>Designed and developed by</span><b>Digital Transformation &amp; Automation</b></div>
      
    </div>
  </header>
-}
+}
+
+
+
+
