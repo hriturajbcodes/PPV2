@@ -72,19 +72,28 @@ export async function fetchSnapshot(): Promise<DashboardSnapshot> {
 
   // SELECT-only by design. One query returns the latest row for every configured tag.
   const result = await request.query(`
-    WITH ranked AS (
+    WITH latest AS (
       SELECT
         tag_name,
-        ts_utc,
-        TRY_CONVERT(float, tag_value) AS numeric_value,
-        ROW_NUMBER() OVER (PARTITION BY tag_name ORDER BY ts_utc DESC) AS rn
+        MAX(ts_utc) AS ts_utc
       FROM ${env.view}
       WHERE asset_path = 'pp'
         AND tag_name IN (${placeholders})
+      GROUP BY tag_name
     )
-    SELECT tag_name, ts_utc, numeric_value
-    FROM ranked
-    WHERE rn = 1;
+    SELECT
+      l.tag_name,
+      l.ts_utc,
+      TRY_CONVERT(float, v.tag_value) AS numeric_value
+    FROM latest l
+    OUTER APPLY (
+      SELECT TOP (1)
+        x.tag_value
+      FROM ${env.view} x
+      WHERE x.asset_path = 'pp'
+        AND x.tag_name = l.tag_name
+        AND x.ts_utc = l.ts_utc
+    ) v;
   `);
 
   const values: Record<string, HistorianValue> = Object.fromEntries(

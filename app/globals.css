@@ -131,3 +131,834 @@ html[data-theme="light"] .toolbar button.on{background:#17212a;color:#fff}
 .chart-tools button:disabled{opacity:.28;cursor:not-allowed}
 .interactive-chart::after{content:"Wheel: zoom  ·  ← →: pan  ·  + −: stretch  ·  Esc: reset";position:absolute;right:8px;bottom:5px;color:#4f6a84;font-size:7px;pointer-events:none;opacity:0;transition:opacity .15s ease}
 .interactive-chart:hover::after,.interactive-chart:focus-within::after{opacity:1}
+
+
+/* Phase 20 — FSTAR-inspired executive polish */
+:root{--font-data:var(--font-inter),Inter,Arial,sans-serif;--font-display:var(--font-poppins),Poppins,Arial,sans-serif;--font-accent:var(--font-editorial),Georgia,serif;--ease-expressive:cubic-bezier(.22,1,.36,1)}
+html,body,button,input,select,textarea{font-family:var(--font-data)}
+.title,.kpi header b,.bins h2,.insights-top h1,.insight-list h2,.forecast-placeholder h2{font-family:var(--font-display)}
+.value,.status b,.bin-value,.insight-kpi b{font-family:var(--font-data);font-variant-numeric:tabular-nums lining-nums}
+.insights-top h1 em,.forecast-placeholder h2 em{font-family:var(--font-accent);font-weight:400;font-style:italic;letter-spacing:-.025em}
+
+.motion-card{animation:fstarCardIn .46s var(--ease-expressive) both}
+.kpis .motion-card:nth-child(2){animation-delay:45ms}.kpis .motion-card:nth-child(3){animation-delay:90ms}.kpis .motion-card:nth-child(4){animation-delay:135ms}
+@keyframes fstarCardIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.actions button,.actions .admin-lock,.toolbar button,.chart-tools button,.bins button{transition:transform .12s ease,background .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease}
+.actions button:hover,.actions .admin-lock:hover,.toolbar button:hover,.chart-tools button:hover:not(:disabled),.bins button:hover{transform:translateY(-1px)}
+.actions button:active,.actions .admin-lock:active,.toolbar button:active,.chart-tools button:active:not(:disabled),.bins button:active{transform:scale(.97)}
+.state-live{position:relative}
+.state-live:before{content:"";position:absolute;left:-1px;top:50%;width:10px;height:10px;border:1px solid currentColor;border-radius:50%;transform:translate(-50%,-50%);animation:fstarLiveRing 2s ease-out infinite}
+@keyframes fstarLiveRing{0%{opacity:.55;transform:translate(-50%,-50%) scale(.55)}70%,100%{opacity:0;transform:translate(-50%,-50%) scale(1.8)}}
+
+.bin{position:relative;outline:none;transition:transform .18s var(--ease-expressive),filter .18s ease}
+.bin:hover,.bin:focus-visible{transform:translateY(-4px);filter:brightness(1.06)}
+.bin .vessel{overflow:visible;transition:border-color .2s ease,box-shadow .2s ease}
+.bin:hover .vessel,.bin:focus-visible .vessel{border-color:#496071;box-shadow:0 12px 28px #0007}
+.vessel-zone{position:absolute;left:0;right:0;z-index:0;pointer-events:none}
+.zone-overfeed{top:0;height:20%;background:linear-gradient(180deg,rgba(239,65,73,.05),transparent)}
+.zone-normal{top:20%;height:55%;background:rgba(45,140,255,.018)}
+.zone-low{top:75%;height:10%;background:rgba(255,173,28,.025)}
+.zone-starving{bottom:0;height:15%;background:rgba(255,65,74,.035)}
+.vessel .fill{z-index:1!important;overflow:visible;transition:height .72s var(--ease-expressive),background .25s ease,box-shadow .25s ease}
+.fill-normal{background:linear-gradient(180deg,#2b91e8,#1269b8)!important}.fill-low{background:linear-gradient(180deg,#e0a01e,#ae7108)!important}.fill-starving,.fill-overfeed{background:linear-gradient(180deg,#ee4e57,#aa232c)!important}.fill-stale{background:linear-gradient(180deg,#72808d,#48525c)!important}
+.fill-surface{position:absolute;left:0;right:0;top:0;height:2px;background:rgba(255,255,255,.5);box-shadow:0 0 9px rgba(255,255,255,.14)}
+.bin-low .bin-value{color:#ffb326}.bin-starving .bin-value,.bin-overfeed .bin-value{color:#ff5961}.bin-stale .bin-value{color:#8b99a6}
+.state-dot{display:block;width:5px;height:5px;border-radius:50%;margin:4px auto 0;background:#2d8cff}.state-dot-low{background:#ffad1c}.state-dot-starving,.state-dot-overfeed{background:#ff414a}.state-dot-stale{background:#788696}
+.bin-starving .state-dot,.bin-overfeed .state-dot{animation:fstarAlarmPulse 1.6s ease-in-out infinite}
+@keyframes fstarAlarmPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,65,74,.22)}50%{box-shadow:0 0 0 5px rgba(255,65,74,0)}}
+.bin-tooltip{position:absolute;left:50%;bottom:calc(100% + 9px);transform:translate(-50%,5px);width:112px;padding:8px 9px;background:#0c0f12;border:1px solid #2a333b;border-radius:6px;box-shadow:0 14px 34px #000a;display:flex;flex-direction:column;gap:3px;opacity:0;pointer-events:none;transition:opacity .16s ease,transform .16s ease;z-index:20;text-align:left}
+.bin:hover .bin-tooltip,.bin:focus-visible .bin-tooltip{opacity:1;transform:translate(-50%,0)}
+.bin-tooltip>b{font-size:8px;color:#7693b0}.bin-tooltip>strong{font-size:14px}.bin-tooltip>em{font-family:var(--font-accent);font-size:11px;color:#9eb2c5}
+
+.track i{transition:width .65s var(--ease-expressive)}
+.toolbar button.on,.bins button.on{box-shadow:inset 0 -2px 0 #2d8cff}
+.interactive-chart{background:radial-gradient(circle at 50% 100%,rgba(45,140,255,.035),transparent 45%)}
+.recharts-tooltip-wrapper{transition:transform .08s linear!important}
+
+.editorial-insights{background:radial-gradient(circle at 15% 0,rgba(45,140,255,.06),transparent 28rem),#060708}
+.insights-top{padding:24px 0 10px}.insights-top h1{font-size:44px;line-height:.98;letter-spacing:-.045em;max-width:650px}.insights-top h1 em{font-size:1.08em;color:#a9c3dc}.insights-top p{font-size:12px;max-width:560px;line-height:1.65}
+.insight-kpi{position:relative;overflow:hidden;transition:transform .18s var(--ease-expressive),border-color .18s ease}.insight-kpi:hover{transform:translateY(-3px);border-color:#354451}.insight-arrow{position:absolute;right:13px;top:13px!important;width:13px!important;opacity:.35}
+.section-kicker{display:block;margin-bottom:5px;color:#4f8fca!important;letter-spacing:.12em}
+.insight-row{animation:fstarCardIn .4s var(--ease-expressive) both;grid-template-columns:34px 1fr auto}.insight-index{font-family:var(--font-accent);font-style:italic;font-size:18px;color:#526d87}.forecast-placeholder h2 em{color:#8faac2}
+
+html[data-theme="light"] body,html[data-theme="light"] .app-shell,html[data-theme="light"] .editorial-insights{background:#f3f6f8!important;color:#111820}
+html[data-theme="light"] .panel{background:#fff!important;border-color:#d9e1e7!important;box-shadow:0 1px 2px rgba(20,40,60,.025)}
+html[data-theme="light"] .topbar{background:rgba(255,255,255,.96)!important;border-color:#d7dfe5!important}
+html[data-theme="light"] .sub,html[data-theme="light"] .kpi p,html[data-theme="light"] .kpi footer,html[data-theme="light"] .bins p,html[data-theme="light"] .bins>footer{color:#66839f!important}
+html[data-theme="light"] .vessel{background:#f0f4f6!important;border-color:#d2dce4!important}
+html[data-theme="light"] .bin-tooltip{background:#fff;color:#15212b;border-color:#ccd7df;box-shadow:0 14px 30px rgba(30,50,70,.16)}html[data-theme="light"] .bin-tooltip>em{color:#627f99}
+html[data-theme="light"] .toolbar button,html[data-theme="light"] .chart-tools button,html[data-theme="light"] .bins button{background:#fff!important;color:#607d99!important;border-color:#d4dde4!important}
+html[data-theme="light"] .toolbar button.on,html[data-theme="light"] .bins button.on{background:#111820!important;color:#fff!important;border-color:#111820!important}
+html[data-theme="light"] .insights-top h1 em,html[data-theme="light"] .forecast-placeholder h2 em{color:#526f89}html[data-theme="light"] .insight-index{color:#7891a8}
+html[data-theme="light"] .interactive-chart{background:radial-gradient(circle at 50% 100%,rgba(45,140,255,.055),transparent 45%),#fff}
+
+@media(prefers-reduced-motion:reduce){.motion-card,.insight-row,.state-live:before,.bin-starving .state-dot,.bin-overfeed .state-dot{animation:none!important}.bin,.vessel .fill,.actions button,.toolbar button,.chart-tools button,.bins button,.track i{transition:none!important}}
+
+/* ==========================================================
+   PPV2 FINAL OPERATIONAL UI
+   Responsive fullscreen + dark/light parity
+   ========================================================== */
+
+:root {
+  --dash-gap: clamp(8px, 0.8vw, 15px);
+  --dash-x: clamp(12px, 1.3vw, 22px);
+  --dash-y: clamp(10px, 1vw, 16px);
+}
+
+/* ---------- GLOBAL ---------- */
+
+html,
+body {
+  width: 100%;
+  min-width: 0 !important;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-inter), Inter, Arial, sans-serif !important;
+}
+
+.app-shell {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.title,
+.kpi header b,
+.bins h2,
+.status b,
+.bin > b,
+.value,
+.bin-value {
+  font-family: var(--font-inter), Inter, Arial, sans-serif !important;
+}
+
+.title {
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+
+.kpi header b,
+.bins h2 {
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+.value,
+.status b,
+.bin-value {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+
+/* ---------- HEADER ---------- */
+
+.topbar {
+  width: 100%;
+
+  height: clamp(62px, 5.2vw, 74px) !important;
+  min-height: 62px !important;
+
+  padding-left: clamp(18px, 4vw, 62px) !important;
+  padding-right: clamp(12px, 1.5vw, 22px) !important;
+
+  gap: 16px;
+}
+
+.topbar > div:first-child {
+  min-width: clamp(330px, 32vw, 500px) !important;
+}
+
+.title {
+  font-size: clamp(19px, 1.55vw, 25px) !important;
+}
+
+.sub {
+  font-size: clamp(9px, 0.7vw, 11px) !important;
+}
+
+.actions {
+  min-width: 0;
+  gap: clamp(5px, 0.55vw, 9px) !important;
+}
+
+.actions button,
+.actions .admin-lock {
+  height: clamp(32px, 2.5vw, 38px) !important;
+}
+
+.logo {
+  width: clamp(98px, 8vw, 128px) !important;
+  height: clamp(40px, 3.3vw, 49px) !important;
+}
+
+.jspl-logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.innovation {
+  font-size: clamp(9px, 0.7vw, 11px) !important;
+  line-height: 1.35 !important;
+}
+
+.innovation strong {
+  font-size: clamp(10px, 0.78vw, 12px) !important;
+}
+
+
+/* ---------- MAIN DASHBOARD ---------- */
+
+.dash {
+  width: 100%;
+  padding:
+    var(--dash-y)
+    var(--dash-x) !important;
+}
+
+.kpis,
+.status,
+.lower {
+  gap: var(--dash-gap) !important;
+}
+
+.kpis {
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr)) !important;
+}
+
+
+/* ---------- KPI ---------- */
+
+.kpi {
+  height: clamp(150px, 11.2vw, 178px) !important;
+  min-height: 150px !important;
+
+  padding: clamp(12px, 1vw, 16px) !important;
+}
+
+.kpi .value {
+  font-size: clamp(18px, 1.45vw, 24px) !important;
+}
+
+.kpi p,
+.kpi footer {
+  font-size: clamp(9px, 0.68vw, 11px) !important;
+}
+
+
+/* ---------- STATUS ---------- */
+
+.status {
+  margin-top: var(--dash-gap) !important;
+}
+
+.status article {
+  height: clamp(60px, 4.6vw, 72px) !important;
+}
+
+
+/* ---------- LOWER GRID ---------- */
+
+.lower {
+  margin-top: var(--dash-gap) !important;
+
+  grid-template-columns:
+    minmax(0, 1.1fr)
+    minmax(0, 0.9fr) !important;
+}
+
+.bins,
+.trend {
+  height:
+    clamp(
+      345px,
+      calc(100vh - 350px),
+      520px
+    ) !important;
+
+  min-height: 345px !important;
+}
+
+
+/* ==========================================================
+   BIN VISUALIZATION
+   ========================================================== */
+
+.binrow {
+  width: 100% !important;
+
+  margin:
+    clamp(8px, 1vh, 16px)
+    0
+    0 !important;
+
+  padding:
+    0
+    clamp(6px, 0.7vw, 12px);
+}
+
+.bin {
+  width: clamp(34px, 3vw, 48px) !important;
+
+  transition:
+    transform 180ms cubic-bezier(.22,1,.36,1),
+    filter 180ms ease;
+}
+
+.bin:hover,
+.bin:focus-visible {
+  transform: translateY(-2px) !important;
+}
+
+.vessel {
+  height:
+    clamp(
+      145px,
+      calc(100vh - 505px),
+      260px
+    ) !important;
+
+  overflow: hidden !important;
+}
+
+.vessel .fill {
+  transition:
+    height 650ms cubic-bezier(.22,1,.36,1),
+    background 220ms ease !important;
+}
+
+.fill-normal {
+  background:
+    linear-gradient(
+      180deg,
+      #3294e8,
+      #176fbd
+    ) !important;
+}
+
+.fill-low {
+  background:
+    linear-gradient(
+      180deg,
+      #e3a321,
+      #b97808
+    ) !important;
+}
+
+.fill-starving,
+.fill-overfeed {
+  background:
+    linear-gradient(
+      180deg,
+      #ed5159,
+      #b32630
+    ) !important;
+}
+
+.fill-stale {
+  background:
+    linear-gradient(
+      180deg,
+      #788692,
+      #4c5660
+    ) !important;
+}
+
+.fill-surface {
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  top: 0;
+
+  height: 2px;
+
+  background:
+    rgba(255,255,255,.55);
+}
+
+.bin-tooltip {
+  display: none !important;
+}
+
+.bins > footer {
+  padding-top: 5px;
+
+  gap: 10px;
+}
+
+.bins > footer > div {
+  flex-wrap: wrap;
+}
+
+
+/* ==========================================================
+   TREND PANEL
+   ========================================================== */
+
+.trend {
+  min-width: 0;
+}
+
+.trend .chart {
+  height: auto !important;
+
+  min-height: 210px !important;
+
+  flex: 1 1 auto !important;
+}
+
+.interactive-chart {
+  min-width: 0;
+
+  border-radius: 4px;
+}
+
+.chart-tools {
+  gap:
+    clamp(
+      4px,
+      0.5vw,
+      8px
+    ) !important;
+}
+
+.chart-tools button {
+  padding:
+    0
+    clamp(
+      5px,
+      0.5vw,
+      8px
+    ) !important;
+}
+
+.toolbar {
+  gap: 8px;
+}
+
+.custom-range {
+  flex-wrap: wrap !important;
+}
+
+
+/* ==========================================================
+   DARK MODE
+   ========================================================== */
+
+html:not([data-theme="light"]) .panel {
+  background:
+    linear-gradient(
+      180deg,
+      #0c0f11,
+      #090b0d
+    ) !important;
+
+  border-color:
+    #20272d !important;
+
+  box-shadow:
+    none !important;
+}
+
+html:not([data-theme="light"]) .topbar {
+  background:
+    #07090a !important;
+}
+
+html:not([data-theme="light"]) .title,
+html:not([data-theme="light"]) .value,
+html:not([data-theme="light"]) .status b,
+html:not([data-theme="light"]) .bins h2 {
+  color:
+    #f4f7f9 !important;
+}
+
+
+/* ==========================================================
+   LIGHT MODE
+   ========================================================== */
+
+html[data-theme="light"] body,
+html[data-theme="light"] .app-shell {
+  background:
+    #f4f7f9 !important;
+
+  color:
+    #17212a !important;
+}
+
+html[data-theme="light"] .topbar {
+  background:
+    #ffffff !important;
+
+  border-top-color:
+    #7c858d !important;
+
+  border-bottom-color:
+    #dce3e8 !important;
+
+  box-shadow:
+    0 1px 3px
+    rgba(25,45,65,.045) !important;
+}
+
+html[data-theme="light"] .panel {
+  background:
+    #ffffff !important;
+
+  border-color:
+    #d9e1e7 !important;
+
+  box-shadow:
+    0 1px 3px
+    rgba(25,45,65,.04) !important;
+}
+
+html[data-theme="light"] .title,
+html[data-theme="light"] .value,
+html[data-theme="light"] .status b,
+html[data-theme="light"] .bins h2,
+html[data-theme="light"] .bin > b,
+html[data-theme="light"] .bin-value {
+  color:
+    #15202a !important;
+}
+
+html[data-theme="light"] .sub,
+html[data-theme="light"] .kpi header b,
+html[data-theme="light"] .kpi p,
+html[data-theme="light"] .kpi footer,
+html[data-theme="light"] .status span,
+html[data-theme="light"] .bins p,
+html[data-theme="light"] .bins > footer,
+html[data-theme="light"] .trend-bottom footer {
+  color:
+    #66829d !important;
+}
+
+
+/* ---------- LIGHT KPI ---------- */
+
+html[data-theme="light"] .track {
+  background:
+    #e7edf1 !important;
+}
+
+
+/* ---------- LIGHT BINS ---------- */
+
+html[data-theme="light"] .vessel {
+  background:
+    #eef3f6 !important;
+
+  border-color:
+    #d4dde4 !important;
+
+  box-shadow:
+    inset 0 1px 2px
+    rgba(20,45,65,.04) !important;
+}
+
+
+/* ---------- LIGHT CONTROLS ---------- */
+
+html[data-theme="light"] .actions button,
+html[data-theme="light"] .actions .admin-lock,
+html[data-theme="light"] .toolbar button,
+html[data-theme="light"] .chart-tools button,
+html[data-theme="light"] .bins button {
+  background:
+    #ffffff !important;
+
+  color:
+    #5f7b96 !important;
+
+  border-color:
+    #d5dee5 !important;
+
+  box-shadow:
+    none !important;
+}
+
+html[data-theme="light"] .actions button:hover,
+html[data-theme="light"] .actions .admin-lock:hover,
+html[data-theme="light"] .toolbar button:hover,
+html[data-theme="light"] .chart-tools button:hover,
+html[data-theme="light"] .bins button:hover {
+  background:
+    #f3f7fa !important;
+
+  border-color:
+    #aebdca !important;
+
+  color:
+    #23394d !important;
+}
+
+html[data-theme="light"] .toolbar button.on,
+html[data-theme="light"] .bins button.on {
+  background:
+    #15202a !important;
+
+  color:
+    #ffffff !important;
+
+  border-color:
+    #15202a !important;
+}
+
+
+/* ---------- LIGHT CHART ---------- */
+
+html[data-theme="light"] .interactive-chart {
+  background:
+    #ffffff !important;
+}
+
+html[data-theme="light"]
+.recharts-cartesian-grid line {
+  stroke:
+    #dce4ea !important;
+}
+
+html[data-theme="light"]
+.recharts-text {
+  fill:
+    #6c88a3 !important;
+}
+
+
+/* ==========================================================
+   FULLSCREEN / LARGE MONITOR
+   ========================================================== */
+
+@media (min-width: 1800px) {
+
+  .dash {
+    max-width:
+      1920px;
+
+    margin:
+      0 auto;
+  }
+
+  .lower {
+    grid-template-columns:
+      minmax(0,1.08fr)
+      minmax(0,.92fr) !important;
+  }
+
+  .bins,
+  .trend {
+    height:
+      calc(100vh - 350px) !important;
+
+    max-height:
+      560px;
+  }
+}
+
+
+/* ==========================================================
+   MEDIUM DESKTOP
+   ========================================================== */
+
+@media (max-width: 1280px) {
+
+  .innovation {
+    display:
+      none !important;
+  }
+
+  .topbar > div:first-child {
+    min-width:
+      330px !important;
+  }
+
+  .bins > footer {
+    font-size:
+      8px !important;
+  }
+}
+
+
+/* ==========================================================
+   SMALL DESKTOP FALLBACK
+   ========================================================== */
+
+@media (max-width: 1050px) {
+
+  body {
+    overflow-x:
+      auto;
+  }
+
+  .app-shell {
+    min-width:
+      1000px;
+  }
+}
+
+
+/* ==========================================================
+   ACCESSIBILITY
+   ========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .motion-card {
+    animation:
+      none !important;
+  }
+
+  .vessel .fill,
+  .bin,
+  .actions button,
+  .toolbar button,
+  .chart-tools button {
+    transition:
+      none !important;
+  }
+}
+
+
+/* ==========================================================
+   HEADER CLEANUP
+   ========================================================== */
+
+/* Remove KPI black separator */
+.kpi footer {
+    border-top: none !important;
+}
+
+/* Insights navigation */
+.actions .insights-button {
+    height: 34px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    padding: 0 13px;
+
+    border: 1px solid #2b3741;
+    border-radius: 6px;
+
+    background: #0d1115;
+
+    color: #9db5ca;
+
+    text-decoration: none;
+
+    font-family: var(--font-inter), Inter, Arial, sans-serif;
+
+    font-size: 10px;
+    font-weight: 650;
+
+    white-space: nowrap;
+
+    transition:
+        background 160ms ease,
+        border-color 160ms ease,
+        color 160ms ease,
+        transform 120ms ease;
+}
+
+.actions .insights-button span {
+    font-size: 13px;
+    line-height: 1;
+
+    transition:
+        transform 160ms ease;
+}
+
+.actions .insights-button:hover {
+    background: #151c22;
+
+    border-color: #536b7d;
+
+    color: #ffffff;
+
+    transform: translateY(-1px);
+}
+
+.actions .insights-button:hover span {
+    transform: translate(2px, -2px);
+}
+
+.actions .insights-button:active {
+    transform: scale(.97);
+}
+
+
+/* ==========================================================
+   LIGHT THEME HEADER
+   ========================================================== */
+
+html[data-theme="light"] .innovation strong {
+    color: #17212a !important;
+}
+
+html[data-theme="light"] .innovation span {
+    color: #66829d !important;
+}
+
+html[data-theme="light"] .innovation b {
+    color: #147bd1 !important;
+}
+
+
+/* Insights becomes primary navigation action */
+
+html[data-theme="light"] .actions .insights-button {
+    background: #15202a !important;
+
+    border-color: #15202a !important;
+
+    color: #ffffff !important;
+}
+
+html[data-theme="light"] .actions .insights-button:hover {
+    background: #263746 !important;
+
+    border-color: #263746 !important;
+}
+
+
+/* ==========================================================
+   HEADER SPACING AFTER REMOVING LIVE + SOUND
+   ========================================================== */
+
+.actions {
+    gap: 7px !important;
+}
+
+.actions em {
+    margin-left: 4px;
+    margin-right: 4px;
+}
+
+
+/* ==========================================================
+   KPI CLEANUP
+   ========================================================== */
+
+.kpi footer {
+    border-top: 0 !important;
+    box-shadow: none !important;
+}
+
+/* Remove any pseudo-element separator */
+
+.kpi footer::before,
+.kpi footer::after {
+    display: none !important;
+    content: none !important;
+}
+
