@@ -25,7 +25,7 @@ export function Header({data,paused,onPause,sound,onSound,alarmCount,onAlarms}:{
  };
 
  return <header className="topbar">
-   <div><div className="title brand-title"><span>Pellet Plant</span><em>KPI Dashboard.</em></div><div className="sub">PELLET PLANT - PLANT 2 <b className={`state-${state.toLowerCase()}`}>{state} <i>({latency}ms)</i></b></div></div>
+   <div><div className="title brand-title"><span>Pellet Plant</span><em>KPI Dashboard.</em></div><div className="sub"><b className={`state-${state.toLowerCase()}`}>{state} <i>({latency}ms)</i></b></div></div>
    <div className="actions">
      <button className={alarmCount?"alarm-button":""} onClick={onAlarms} title="Active alarms"><Bell/>{alarmCount>0&&<span>{alarmCount}</span>}</button>
      <button onClick={()=>window.print()} title="Print dashboard"><Printer/></button>

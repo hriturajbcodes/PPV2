@@ -9,7 +9,7 @@ import {
 import type {TrendMetric,TrendPoint,TrendRange} from "@/lib/trends";
 
 type Payload={metric:TrendMetric;range:TrendRange;source:string;from:string;to:string;points:TrendPoint[]};
-type ChartPoint=TrendPoint&{label:string;index:number};
+type ChartPoint=TrendPoint&{label:string;index:number;shift:"A"|"B"|"C"};
 
 function istLabel(iso:string,range:TrendRange){
  const d=new Date(iso);
@@ -57,6 +57,7 @@ const FastTrendGraph=memo(function FastTrendGraph({
    {pinned&&chart.some(x=>x.timestamp===pinned.timestamp)&&
     <ReferenceLine x={pinned.label} stroke="#fff" strokeOpacity={.45} strokeDasharray="3 3"/>
    }
+
    <CartesianGrid vertical={false} stroke="#172029" strokeDasharray="2 4"/>
    <XAxis dataKey="label" interval="preserveStartEnd" tick={{fill:"#7893b1",fontSize:9}}
     axisLine={false} tickLine={false} minTickGap={38} height={22}/>
@@ -76,6 +77,22 @@ const FastTrendGraph=memo(function FastTrendGraph({
  </ResponsiveContainer>
 });
 
+
+function shiftForTimestamp(timestamp:string){
+ const parts=new Intl.DateTimeFormat("en-GB",{
+  timeZone:"Asia/Kolkata",
+  hour:"2-digit",
+  hourCycle:"h23"
+ }).formatToParts(new Date(timestamp));
+
+ const hour=Number(
+  parts.find(part=>part.type==="hour")?.value??0
+ );
+
+ if(hour>=22||hour<6)return "C";
+ if(hour>=6&&hour<14)return "A";
+ return "B";
+}
 export function Trend(){
  const[metric,setMetric]=useState<TrendMetric>("moisture");
  const[range,setRange]=useState<TrendRange>("daily");
@@ -118,7 +135,7 @@ export function Trend(){
   window.addEventListener("keydown",esc);return()=>window.removeEventListener("keydown",esc);
  },[popout]);
 
- const full=useMemo<ChartPoint[]>(()=>points.map((p,index)=>({...p,index,label:istLabel(p.timestamp,range)})),[points,range]);
+ const full=useMemo<ChartPoint[]>(()=>points.map((p,index)=>({...p,index,label:istLabel(p.timestamp,range),shift:shiftForTimestamp(p.timestamp)})),[points,range]);
  const chart=useMemo(()=>{
   if(zoom)return full.slice(zoom.left,zoom.right+1);
   if(windowSize&&full.length>windowSize)return full.slice(full.length-windowSize);
@@ -200,7 +217,25 @@ export function Trend(){
  return <>
   <section className="panel trend">
    {toolbar}
-   <div className="chart interactive-chart" tabIndex={0} onWheel={wheelZoom}
+       {range==="daily"&&
+     <div className="shift-legend">
+      <span className="shift-c">
+       <i/> C Shift
+       <small>22:00 - 06:00</small>
+      </span>
+
+      <span className="shift-a">
+       <i/> A Shift
+       <small>06:00 - 14:00</small>
+      </span>
+
+      <span className="shift-b">
+       <i/> B Shift
+       <small>14:00 - 22:00</small>
+      </span>
+     </div>
+    }
+    <div className="chart interactive-chart" tabIndex={0} onWheel={wheelZoom}
  onKeyDown={e=>{if(e.key==="+"){zoomIn()}else if(e.key==="-"){zoomOut()}else if(e.key==="ArrowLeft"){pan(-1)}else if(e.key==="ArrowRight"){pan(1)}else if(e.key==="Escape"){reset()}}}>
  {graph}
 </div>

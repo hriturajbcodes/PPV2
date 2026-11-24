@@ -2,338 +2,259 @@ $ErrorActionPreference = "Stop"
 
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host " PPV2 - Trend Configuration Final Fix" -ForegroundColor Cyan
+Write-Host " PPV2 - Light Mode Alarm Drawer Fix" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
 
-$trendComponent = "components\trend.tsx"
-$trendLibrary   = "lib\trends.ts"
+$cssFile = "app\globals.css"
 
-# ============================================================
-# VALIDATE PROJECT FILES
-# ============================================================
-
-if (-not (Test-Path $trendComponent)) {
-    Write-Host "ERROR: $trendComponent not found." -ForegroundColor Red
+if (-not (Test-Path $cssFile)) {
+    Write-Host "ERROR: $cssFile not found." -ForegroundColor Red
     exit 1
 }
 
-if (-not (Test-Path $trendLibrary)) {
-    Write-Host "ERROR: $trendLibrary not found." -ForegroundColor Red
-    exit 1
-}
-
-
-# ============================================================
-# BACKUP
-# ============================================================
-
-$backupDir = ".ppv2-backup"
+# Backup
+$backupDir = ".ppv2-backup-alarm-theme"
 
 if (-not (Test-Path $backupDir)) {
     New-Item -ItemType Directory -Path $backupDir | Out-Null
 }
 
-Copy-Item $trendComponent "$backupDir\trend.tsx" -Force
-Copy-Item $trendLibrary "$backupDir\trends.ts" -Force
+Copy-Item $cssFile "$backupDir\globals.css" -Force
 
-Write-Host "Backup created in $backupDir" -ForegroundColor DarkGray
+Write-Host "[OK] Backup created." -ForegroundColor Green
 
+$current = Get-Content $cssFile -Raw -Encoding UTF8
 
-# ============================================================
-# TREND COMPONENT
-# ============================================================
-
-Write-Host ""
-Write-Host "Updating trend component..." -ForegroundColor Yellow
-
-$trend = Get-Content $trendComponent -Raw -Encoding UTF8
-
-
-# ------------------------------------------------------------
-# 1. DEFAULT RANGE = DAILY
-# ------------------------------------------------------------
-
-$oldDefault = 'const[range,setRange]=useState<TrendRange>("live");'
-$newDefault = 'const[range,setRange]=useState<TrendRange>("daily");'
-
-if ($trend.Contains($oldDefault)) {
-
-    $trend = $trend.Replace(
-        $oldDefault,
-        $newDefault
-    )
-
-    Write-Host "  [OK] Default chart changed: Live -> Daily" -ForegroundColor Green
-}
-elseif ($trend.Contains($newDefault)) {
-
-    Write-Host "  [SKIP] Daily is already the default." -ForegroundColor DarkGray
+# Prevent duplicate installation
+if ($current.Contains("PPV2 LIGHT ALARM DRAWER")) {
+    Write-Host "[SKIP] Light alarm drawer styles already exist." -ForegroundColor Yellow
 }
 else {
 
-    Write-Host "  [WARN] Could not locate range state declaration." -ForegroundColor Yellow
+$styles = @'
+
+/* ==========================================================
+   PPV2 LIGHT ALARM DRAWER
+   ========================================================== */
+
+html[data-theme="light"] .alarm-backdrop {
+  background: rgba(28, 40, 50, 0.24) !important;
+  backdrop-filter: blur(3px);
+}
+
+html[data-theme="light"] .alarm-drawer {
+  background: #f7f9fb !important;
+  border-left: 1px solid #d8e0e6 !important;
+  box-shadow: -18px 0 48px rgba(25, 45, 65, 0.14) !important;
+  color: #17212a !important;
 }
 
 
-# ------------------------------------------------------------
-# 2. RENAME LIVE (40s) -> LIVE
-# ------------------------------------------------------------
+/* Header */
 
-if ($trend.Contains(">Live (40s)</button>")) {
-
-    $trend = $trend.Replace(
-        ">Live (40s)</button>",
-        ">Live</button>"
-    )
-
-    Write-Host "  [OK] Live (40s) renamed to Live" -ForegroundColor Green
-}
-elseif ($trend.Contains(">Live</button>")) {
-
-    Write-Host "  [SKIP] Live button already renamed." -ForegroundColor DarkGray
-}
-else {
-
-    Write-Host "  [WARN] Could not locate Live button label." -ForegroundColor Yellow
+html[data-theme="light"] .alarm-drawer > header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #dce4ea !important;
 }
 
-
-# Save component
-
-Set-Content `
-    -Path $trendComponent `
-    -Value $trend `
-    -Encoding UTF8 `
-    -NoNewline
-
-
-# ============================================================
-# TREND BACKEND
-# ============================================================
-
-Write-Host ""
-Write-Host "Updating historian trend window..." -ForegroundColor Yellow
-
-$library = Get-Content $trendLibrary -Raw -Encoding UTF8
-
-
-# ------------------------------------------------------------
-# 3. LIVE WINDOW 40 SEC -> 120 SEC
-# ------------------------------------------------------------
-
-$patterns40 = @(
-    "40_000",
-    "40000"
-)
-
-$changedWindow = $false
-
-foreach ($pattern in $patterns40) {
-
-    if ($library.Contains($pattern)) {
-
-        if ($pattern -eq "40_000") {
-
-            $library = $library.Replace(
-                "40_000",
-                "120_000"
-            )
-        }
-        else {
-
-            $library = $library.Replace(
-                "40000",
-                "120000"
-            )
-        }
-
-        $changedWindow = $true
-    }
+html[data-theme="light"] .alarm-drawer > header small {
+  color: #65829d !important;
 }
 
-if ($changedWindow) {
-
-    Write-Host "  [OK] Live historian window changed to 120 seconds" -ForegroundColor Green
+html[data-theme="light"] .alarm-drawer > header h2 {
+  color: #17212a !important;
 }
-elseif (
-    $library.Contains("120_000") -or
-    $library.Contains("120000")
-) {
 
-    Write-Host "  [SKIP] Live window already uses 120 seconds." -ForegroundColor DarkGray
+html[data-theme="light"] .alarm-drawer > header button {
+  background: transparent !important;
+  color: #617c95 !important;
 }
-else {
 
-    Write-Host "  [WARN] Could not identify the existing Live time window." -ForegroundColor Yellow
+html[data-theme="light"] .alarm-drawer > header button:hover {
+  background: #eef3f6 !important;
+  color: #17212a !important;
 }
 
 
-# ------------------------------------------------------------
-# 4. LIVE GAP THRESHOLD
-#
-# Existing:
-# range==="live" ? 6000 : 120000
-#
-# New:
-# range==="live" ? 15000 : 120000
-# ------------------------------------------------------------
+/* Alarm summary */
 
-$oldGap1 = 'range==="live" ? 6000 : 120000'
-$newGap1 = 'range==="live" ? 15000 : 120000'
-
-$oldGap2 = 'range === "live" ? 6000 : 120000'
-$newGap2 = 'range === "live" ? 15000 : 120000'
-
-if ($library.Contains($oldGap1)) {
-
-    $library = $library.Replace(
-        $oldGap1,
-        $newGap1
-    )
-
-    Write-Host "  [OK] Live gap threshold changed to 15 seconds" -ForegroundColor Green
+html[data-theme="light"] .alarm-actions {
+  background: #ffffff !important;
+  border-bottom: 1px solid #dce4ea !important;
+  color: #607c97 !important;
 }
-elseif ($library.Contains($oldGap2)) {
 
-    $library = $library.Replace(
-        $oldGap2,
-        $newGap2
-    )
-
-    Write-Host "  [OK] Live gap threshold changed to 15 seconds" -ForegroundColor Green
+html[data-theme="light"] .alarm-actions button {
+  background: #ffffff !important;
+  border: 1px solid #ccd7df !important;
+  color: #263746 !important;
 }
-elseif (
-    $library.Contains($newGap1) -or
-    $library.Contains($newGap2)
-) {
 
-    Write-Host "  [SKIP] Live gap threshold already configured." -ForegroundColor DarkGray
-}
-else {
-
-    Write-Host "  [WARN] Gap threshold expression not found." -ForegroundColor Yellow
+html[data-theme="light"] .alarm-actions button:hover {
+  background: #eef4f7 !important;
+  border-color: #9eb1c0 !important;
+  color: #17212a !important;
 }
 
 
-# Save trend backend
+/* Alarm list */
 
-Set-Content `
-    -Path $trendLibrary `
-    -Value $library `
-    -Encoding UTF8 `
-    -NoNewline
-
-
-# ============================================================
-# VERIFY
-# ============================================================
-
-Write-Host ""
-Write-Host "Verifying modifications..." -ForegroundColor Cyan
-
-$trendCheck = Get-Content $trendComponent -Raw -Encoding UTF8
-$libCheck   = Get-Content $trendLibrary -Raw -Encoding UTF8
-
-$failed = $false
-
-
-# Daily default
-
-if ($trendCheck.Contains('useState<TrendRange>("daily")')) {
-
-    Write-Host "  [PASS] Daily default" -ForegroundColor Green
-}
-else {
-
-    Write-Host "  [FAIL] Daily default" -ForegroundColor Red
-    $failed = $true
+html[data-theme="light"] .alarm-list {
+  background: #f7f9fb !important;
 }
 
 
-# Live label
+/* Alarm card */
 
-if (
-    $trendCheck.Contains(">Live</button>") -and
-    -not $trendCheck.Contains("Live (40s)")
-) {
+html[data-theme="light"] .alarm-row {
+  background: #ffffff !important;
+  border-color: #dce3e8 !important;
 
-    Write-Host "  [PASS] Live label" -ForegroundColor Green
-}
-else {
-
-    Write-Host "  [FAIL] Live label" -ForegroundColor Red
-    $failed = $true
+  box-shadow:
+    0 1px 2px
+    rgba(25, 45, 65, 0.035) !important;
 }
 
 
-# Live range
+/* Warning */
 
-if (
-    $libCheck.Contains("120_000") -or
-    $libCheck.Contains("120000")
-) {
-
-    Write-Host "  [PASS] 120 second Live range" -ForegroundColor Green
+html[data-theme="light"] .alarm-row.warning {
+  border-left-color: #e3a01a !important;
 }
-else {
 
-    Write-Host "  [WARN] Could not verify 120 second range" -ForegroundColor Yellow
+html[data-theme="light"] .alarm-row.warning > svg {
+  color: #d9910b !important;
 }
 
 
-# ============================================================
-# CLEAR NEXT CACHE
-# ============================================================
+/* Critical */
 
+html[data-theme="light"] .alarm-row.critical {
+  border-left-color: #df4149 !important;
+}
+
+html[data-theme="light"] .alarm-row.critical > svg {
+  color: #df4149 !important;
+}
+
+
+/* Text */
+
+html[data-theme="light"] .alarm-row b {
+  color: #1b2731 !important;
+}
+
+html[data-theme="light"] .alarm-row p {
+  color: #607c96 !important;
+}
+
+html[data-theme="light"] .alarm-row small {
+  color: #718ba3 !important;
+}
+
+
+/* ACK button */
+
+html[data-theme="light"] .alarm-row > button {
+  background: #ffffff !important;
+  border: 1px solid #d1dbe3 !important;
+  color: #526d85 !important;
+}
+
+html[data-theme="light"] .alarm-row > button:hover {
+  background: #eef4f7 !important;
+  border-color: #a9bac7 !important;
+  color: #17212a !important;
+}
+
+
+/* Acknowledged alarm */
+
+html[data-theme="light"] .alarm-row.acked {
+  opacity: 0.68 !important;
+  background: #f2f5f7 !important;
+}
+
+html[data-theme="light"] .alarm-row.acked b {
+  color: #465d70 !important;
+}
+
+html[data-theme="light"] .alarm-row.acked p {
+  color: #72899d !important;
+}
+
+html[data-theme="light"] .alarm-row.acked small {
+  color: #8296a8 !important;
+}
+
+
+/* No alarms */
+
+html[data-theme="light"] .no-alarms {
+  color: #16865f !important;
+}
+
+
+/* Scrollbar */
+
+html[data-theme="light"] .alarm-list {
+  scrollbar-color: #bdc9d2 #eef2f5;
+}
+
+html[data-theme="light"] .alarm-list::-webkit-scrollbar {
+  width: 7px;
+}
+
+html[data-theme="light"] .alarm-list::-webkit-scrollbar-track {
+  background: #eef2f5;
+}
+
+html[data-theme="light"] .alarm-list::-webkit-scrollbar-thumb {
+  background: #bdc9d2;
+  border-radius: 8px;
+}
+
+html[data-theme="light"] .alarm-list::-webkit-scrollbar-thumb:hover {
+  background: #9faeba;
+}
+
+'@
+
+    Add-Content -Path $cssFile -Value $styles -Encoding UTF8
+
+    Write-Host "[OK] Light alarm drawer styles added." -ForegroundColor Green
+}
+
+
+# Clear Next.js cache
 Write-Host ""
 Write-Host "Clearing Next.js cache..." -ForegroundColor Yellow
 
 if (Test-Path ".next") {
-
-    Remove-Item `
-        ".next" `
-        -Recurse `
-        -Force
-
-    Write-Host "  [OK] .next removed" -ForegroundColor Green
+    Remove-Item ".next" -Recurse -Force
+    Write-Host "[OK] .next removed." -ForegroundColor Green
 }
 else {
-
-    Write-Host "  [SKIP] .next does not exist" -ForegroundColor DarkGray
+    Write-Host "[SKIP] .next not present." -ForegroundColor DarkGray
 }
 
 
-# ============================================================
-# RESULT
-# ============================================================
-
 Write-Host ""
-
-if ($failed) {
-
-    Write-Host "==========================================" -ForegroundColor Red
-    Write-Host " Some required changes could not be verified" -ForegroundColor Red
-    Write-Host "==========================================" -ForegroundColor Red
-
-    Write-Host ""
-    Write-Host "Backups are available in:" -ForegroundColor Yellow
-    Write-Host $backupDir
-
-    exit 1
-}
-
 Write-Host "==========================================" -ForegroundColor Green
-Write-Host " PPV2 trend configuration updated" -ForegroundColor Green
+Write-Host " LIGHT ALARM DRAWER FIX COMPLETE" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Green
-
 Write-Host ""
-Write-Host "Default chart : Daily"
-Write-Host "Live label    : Live"
-Write-Host "Live window   : 120 seconds"
-Write-Host "Gap threshold : 15 seconds"
+Write-Host "Fixed:" -ForegroundColor Cyan
+Write-Host "  - White/light-grey alarm drawer"
+Write-Host "  - Dark readable alarm text"
+Write-Host "  - Warning amber accents"
+Write-Host "  - Critical red accents"
+Write-Host "  - ACK button visibility"
+Write-Host "  - Acknowledged alarm readability"
+Write-Host "  - Light scrollbar"
+Write-Host "  - Drawer backdrop"
 Write-Host ""
-Write-Host "Start the dashboard with:" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "npm.cmd run dev" -ForegroundColor White
+Write-Host "Run:" -ForegroundColor Cyan
+Write-Host "npm.cmd run dev"
 Write-Host ""

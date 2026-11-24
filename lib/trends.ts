@@ -34,9 +34,37 @@ function metricTag(metric: TrendMetric) {
 export function defaultWindow(range: TrendRange) {
   const to = new Date();
   if (range === "live") return { from:new Date(to.getTime()-120_000), to };
-  // Daily means current calendar day in IST. Convert IST midnight to UTC.
-  const ist = new Date(to.getTime()+330*60_000);
-  const from = new Date(Date.UTC(ist.getUTCFullYear(),ist.getUTCMonth(),ist.getUTCDate())-330*60_000);
+  // Production day is defined in IST:
+  // C Shift: 22:00 - 06:00
+  // A Shift: 06:00 - 14:00
+  // B Shift: 14:00 - 22:00
+  //
+  // Therefore the production day begins at 22:00 IST.
+  const IST_OFFSET_MS = 330 * 60_000;
+  const istNow = new Date(to.getTime() + IST_OFFSET_MS);
+
+  let productionDate = new Date(Date.UTC(
+    istNow.getUTCFullYear(),
+    istNow.getUTCMonth(),
+    istNow.getUTCDate(),
+    22,
+    0,
+    0,
+    0
+  ));
+
+  // Before 22:00 IST, production day started yesterday at 22:00.
+  if (istNow.getUTCHours() < 22) {
+    productionDate = new Date(
+      productionDate.getTime() - 24 * 60 * 60_000
+    );
+  }
+
+  // Convert the IST wall-clock timestamp back to UTC.
+  const from = new Date(
+    productionDate.getTime() - IST_OFFSET_MS
+  );
+
   return {from,to};
 }
 
